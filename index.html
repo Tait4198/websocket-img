@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>websocket_img</title>
+</head>
+
+<body onload="bootstrap()">
+    <input type="text" id="path"/>
+    <button onclick="send()">发送</button>
+    <img id="img">
+</body>
+<script>
+    let socket;
+
+    function bootstrap() {
+        socket = new WebSocket('ws://192.168.26.134:9090/img');
+        socket.binaryType = 'arraybuffer';
+        socket.onmessage = handleReceive;
+    }
+
+    function send() {
+        let path = document.getElementById('path');
+        socket.send(JSON.stringify({
+            "path": path.value,
+            "id": '00000000-0000-0000-0000-000000000000'
+        }))
+    }
+
+    function handleReceive(message) {
+        let decoder = new TextDecoder()
+        let buffer = new Uint8Array(message.data);
+        let id = decoder.decode(buffer.subarray(buffer.length - 48, buffer.length - 12))
+        let width = decoder.decode(buffer.subarray(buffer.length - 12, buffer.length - 6))
+        let height = decoder.decode(buffer.subarray(buffer.length - 6, buffer.length))
+        let blob = new Blob([message.data], {type: 'image/jpeg'})
+        let img = document.getElementById("img")
+        img.src = URL.createObjectURL(blob)
+        img.width = parseInt(width)
+        img.height = parseInt(height)
+
+        console.log(id, width, height)
+    }
+</script>
+</html>
