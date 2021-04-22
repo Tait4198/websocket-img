@@ -16,28 +16,51 @@ void ImageWebsocket::imageHandle(const WebSocketConnectionPtr &wsConnPtr, Json::
             printf("Error %s Not Found\n", path.c_str());
             return;
         }
+        int width = img.cols;
+        int height = img.rows;
+        int interpolation = cv::INTER_AREA;
+        int quality = 100;
+        if (jv.isMember("quality")) {
+            quality = jv["quality"].asInt();
+        }
+        if (jv.isMember("width") && jv.isMember("height")) {
+            int nWidth = jv["width"].asInt();
+            int nHeight = jv["height"].asInt();
+            if (nWidth > width || nHeight > height) {
+                interpolation = cv::INTER_CUBIC;
+            }
+            width = nWidth;
+            height = nHeight;
+        } else if (jv.isMember("scale")) {
+            double scale = jv["scale"].asDouble();
+            if (scale > 1) {
+                interpolation = cv::INTER_CUBIC;
+            }
+            width = (int) (width * scale);
+            height = (int) (height * scale);
+        }
 
-        cv::resize(img, img, cv::Size{img.cols / 2, img.rows / 2}, 0, 0, cv::INTER_AREA);
+        cv::resize(img, img, cv::Size{width, height}, 0, 0, interpolation);
 
         std::vector<uchar> buf;
         std::vector<int> params;
         params.push_back(cv::IMWRITE_JPEG_QUALITY);
-        params.push_back(100);
+        params.push_back(quality);
 
         cv::imencode(".jpg", img, buf, params);
-        // uuid 32
+        // uuid 36
         std::string id = jv["id"].asString();
         buf.insert(buf.end(), id.c_str(), id.c_str() + strlen(id.c_str()));
         // width 6
         std::stringstream ssWidth;
         ssWidth << std::setw(6) << std::setfill('0') << img.cols;
-        std::string width = ssWidth.str();
-        buf.insert(buf.end(), width.c_str(), width.c_str() + strlen(width.c_str()));
+        std::string widthStr = ssWidth.str();
+        buf.insert(buf.end(), widthStr.c_str(), widthStr.c_str() + strlen(widthStr.c_str()));
         // height 6
         std::stringstream ssHeight;
         ssHeight << std::setw(6) << std::setfill('0') << img.rows;
-        std::string height = ssHeight.str();
-        buf.insert(buf.end(), height.c_str(), height.c_str() + strlen(height.c_str()));
+        std::string heightStr = ssHeight.str();
+        buf.insert(buf.end(), heightStr.c_str(), heightStr.c_str() + strlen(heightStr.c_str()));
 
         buf.insert(buf.end(), buf.begin(), buf.end());
 
@@ -66,7 +89,7 @@ void ImageWebsocket::handleConnectionClosed(const WebSocketConnectionPtr &wsConn
 
 ImageWebsocket::ImageWebsocket() {
     this->jsonConvert = new JsonConvert;
-    this->threadPool = new ThreadPool(4);
+    this->threadPool = new ThreadPool(8);
 }
 
 ImageWebsocket::~ImageWebsocket() {

@@ -18,10 +18,10 @@ target_link_libraries(websocket_img drogon trantor)
 
 target_link_directories(websocket_img PUBLIC /usr/local/lib/opencv4/3rdparty)
 target_link_libraries(websocket_img ade ippiw libjpeg-turbo libprotobuf quirc IlmImf ittnotify
-        libopenjp2 libtiff zlib ippicv libjasper libpng libwebp)
+        libopenjp2 libtiff ippicv libpng libwebp)
 
 target_link_directories(websocket_img PUBLIC /usr/lib/x86_64-linux-gnu)
-target_link_libraries(websocket_img jsoncpp uuid ssl crypto)
+target_link_libraries(websocket_img jsoncpp uuid ssl crypto z.a)
 
 target_link_libraries(websocket_img dl pthread)
 
